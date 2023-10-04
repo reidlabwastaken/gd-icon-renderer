@@ -49,8 +49,8 @@ pub const COLORS: &'static [[f32; 3]] = &[
 
 // `zany` = uses 2.0 gamemode render system w/ multiple moving parts
 pub struct Gamemode {
-    prefix: String,
-    zany: bool
+    pub prefix: String,
+    pub zany: bool
 }
 
 pub static GAMEMODES: LazyLock<HashMap<&str, Gamemode>> = LazyLock::new(|| { hashmap! {
@@ -59,7 +59,6 @@ pub static GAMEMODES: LazyLock<HashMap<&str, Gamemode>> = LazyLock::new(|| { has
     "ball" => Gamemode { prefix: "player_ball_".to_string(), zany: false },
     "ufo" => Gamemode { prefix: "bird_".to_string(), zany: false },
     "wave" => Gamemode { prefix: "dart_".to_string(), zany: false },
-    // unimplemented
-    // "robot" => Gamemode { prefix: "robot_".to_string(), zany: true },
-    // "spider" => Gamemode { prefix: "spider_".to_string(), zany: true },
+    "robot" => Gamemode { prefix: "robot_".to_string(), zany: true },
+    "spider" => Gamemode { prefix: "spider_".to_string(), zany: true }
 }});

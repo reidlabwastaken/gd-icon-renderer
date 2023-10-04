@@ -1,13 +1,14 @@
 use image::*;
 use image::{DynamicImage, imageops};
+use imageproc::geometric_transformations::{rotate_about_center, Interpolation};
 
 use std::cmp;
 
 use crate::assets;
-use crate::assets::LoadedSpritesheet;
+use crate::assets::{LoadedSpritesheet, Animations, Sprite};
 
 // Internal function to easily transform an image
-fn transform(image: &DynamicImage, color: Option<[f32; 3]>, scale: Option<(f32, f32)>, rotation: Option<i32>) -> DynamicImage {
+fn transform(image: &DynamicImage, color: Option<[f32; 3]>, scale: Option<(f32, f32)>, rotation: Option<f32>) -> DynamicImage {
     let mut transformed_image = image.clone();
 
     if let Some(color) = color {
@@ -44,22 +45,39 @@ fn transform(image: &DynamicImage, color: Option<[f32; 3]>, scale: Option<(f32, 
     }
 
     if let Some(rotation) = rotation {
-        match rotation {
-            0 => (),
-            90 => transformed_image = transformed_image.rotate90(),
-            180 => transformed_image = transformed_image.rotate180(),
-            270 => transformed_image = transformed_image.rotate270(),
-            _ => panic!("rotation must be 0, 90, 180, or 270"),
+        // lets not rotate if we dont need to
+        if rotation == 0.0 {
+            return transformed_image;
         }
+
+        let radians = rotation.to_radians();
+
+        let (width, height) = transformed_image.dimensions();
+        
+        let trig_width = (width as f32 * radians.cos() + height as f32 * radians.sin())
+            .abs()
+            .ceil() as u32;
+        let trig_height = (width as f32 * radians.sin() + height as f32 * radians.cos())
+            .abs()
+            .ceil() as u32;
+
+        let transform_x = ((trig_width as f32 / 2.0) - (width as f32 / 2.0)).ceil() as u32;
+        let transform_y = ((trig_height as f32 / 2.0) - (height as f32 / 2.0)).ceil() as u32;
+
+        let mut canvas = ImageBuffer::new(cmp::max(trig_width, width), cmp::max(trig_height, height));
+        canvas.copy_from(&transformed_image, transform_x, transform_y).expect("couldnt copy from img");
+        canvas = rotate_about_center(&canvas, radians, Interpolation::Bilinear, Rgba([0, 0, 0, 0]));
+        
+        transformed_image = DynamicImage::ImageRgba8(canvas);
     }
 
     return transformed_image;
 }
 
 // Mainly for internal use; given an array of images, their sizes and colors, tints and composits them into a single image
-pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32)>>, colors: Vec<[f32; 3]>, scales: Vec<Option<(f32, f32)>>, rotations: Vec<Option<i32>>) -> DynamicImage {
+pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32)>>, colors: Vec<Option<[f32; 3]>>, scales: Vec<Option<(f32, f32)>>, rotations: Vec<Option<f32>>) -> DynamicImage {
     let transformed: Vec<DynamicImage> = images.iter().enumerate().map(|(i, img)| {
-        transform(img, Some(colors[i]), scales[i], rotations[i])
+        transform(img, colors[i], scales[i], rotations[i])
     }).collect();
     let sizes: Vec<(i64, i64)> = transformed.iter().map(|img| {
         (img.width() as i64, img.height() as i64)
@@ -139,9 +157,86 @@ pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: boo
             .collect(), 
         colors.iter()
             .enumerate()
-            .filter_map(|(i, color)| layers[i].clone().map(|_| color.unwrap()))
+            .filter_map(|(i, color)| layers[i].clone().map(|_| color.to_owned()))
             .collect(),
         vec![None, None, None, None, None],
         vec![None, None, None, None, None]
     );
+}
+
+fn flip(scale: (f32, f32), flipped: (bool, bool)) -> (f32, f32) {
+    (scale.0 * (if flipped.0 { -1 } else { 1 }) as f32, scale.1 * (if flipped.1 { -1 } else { 1 }) as f32)
+}
+
+// Renders out a robot/spider icon. You may be looking for `render_icon`.
+pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, _game_sheet_glow: LoadedSpritesheet, animations: Animations) -> DynamicImage {
+    let glow_col = if is_black(col2) { if is_black(col1) { [1.0, 1.0, 1.0] } else { col1 } } else { col2 };
+    let glow = glow || (is_black(col1) && is_black(col2));
+
+    let mut anim = animations.get("Robot_idle_001.png").unwrap_or_else(|| animations.get("Spider_idle_001.png").expect("no animations found")).clone();
+    anim.sort_by_key(|spr| spr.z);
+
+    let mut layers = anim
+        .iter()
+        .map(|a| {
+            let texture_name = a.texture.clone().replace("spider_01", &basename).replace("robot_01", &basename);
+            let mut names = vec![
+                texture_name.replace("_001.png", "_2_001.png"),
+                texture_name.replace("_001.png", "_3_001.png"),
+                texture_name.clone(),
+                texture_name.replace("_001.png", "_extra_001.png")
+            ];
+            let mut colors = vec![
+                Some(col2),
+                None,
+                Some(col1),
+                None
+            ];
+
+            if glow {
+                names.push(texture_name.replace("_001.png", "_glow_001.png"));
+                colors.push(Some(glow_col));
+            }
+
+            names.iter().enumerate().map(|(i, v)| 
+                (
+                    assets::get_sprite_from_loaded(game_sheet_02.to_owned().clone(), v.clone()),
+                    a.position,
+                    flip(a.scale, a.flipped),
+                    a.rotation,
+                    glow && i == names.len() - 1,
+                    colors[i]
+                )
+            ).collect::<Vec<(Option<(DynamicImage, Sprite)>, (f32, f32), (f32, f32), f64, bool, Option<[f32; 3]>)>>()
+        })
+        .flatten()
+        .collect::<Vec<(Option<(DynamicImage, Sprite)>, (f32, f32), (f32, f32), f64, bool, Option<[f32; 3]>)>>();
+
+    // put glow b4 everything else
+    layers.sort_by_key(|t| if t.4 { 0 } else { 1 });
+
+    let layers_r = layers.iter()
+        .filter(|v| v.0.is_some())
+        .filter_map(|(opt_sprite, pos, scale, rot, glow, color)| opt_sprite.clone().map(|sprite| ((sprite.0, sprite.1), *pos, *scale, *rot, *glow, *color)))
+        .collect::<Vec<((DynamicImage, Sprite), (f32, f32), (f32, f32), f64, bool, Option<[f32; 3]>)>>();
+
+    return render_layered(
+        layers_r.iter().map(|t| t.0.0.clone()).collect(),
+        layers_r.iter().map(|t| Some((t.0.1.offset.0 + t.1.0 * 4.0, t.0.1.offset.1 * -1.0  + t.1.1 * -4.0))).collect(),
+        layers_r.iter().map(|t| t.5).collect(),
+        layers_r.iter().map(|t| Some(t.2)).collect(),
+        layers_r.iter().map(|t| Some(t.3 as f32)).collect()
+    )
+}
+
+// The main entrypoint for icon rendering; this should be all you need to render out an icon.
+// `gamemode` must be one of `cube`, `ship`, `ball`, `ufo`, `wave`, `robot`, or `spider`
+pub fn render_icon(gamemode_str: &str, icon: i32, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, game_sheet_glow: LoadedSpritesheet, robot_animations: Animations, spider_animations: Animations) -> DynamicImage {
+    let gamemode = crate::constants::GAMEMODES.get(gamemode_str).expect("invalid gamemode");
+
+    if gamemode.zany {
+        return render_zany(format!("{}{:02}", gamemode.prefix, icon), col1, col2, glow, game_sheet_02, game_sheet_glow, if gamemode_str == "robot" { robot_animations } else { spider_animations })
+    } else {
+        return render_normal(format!("{}{:02}", gamemode.prefix, icon), col1, col2, glow, game_sheet_02, game_sheet_glow)
+    }
 }

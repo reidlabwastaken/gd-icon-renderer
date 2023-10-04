@@ -128,6 +128,72 @@ pub fn load_spritesheet(path: &str) -> LoadedSpritesheet {
     }
 }
 
+// Represents the metadata of an animation frame's sprite
+#[derive(Clone, Debug)]
+pub struct AnimationSprite {
+    pub texture: String,
+    pub position: (f32, f32),
+    pub scale: (f32, f32),
+    pub rotation: f64,
+    pub flipped: (bool, bool),
+    pub z: i32
+}
+
+impl AnimationSprite {
+    fn initialize(obj: plist::Value) -> AnimationSprite {
+        let hash = obj.as_dictionary().expect("object must be a dict");
+
+        let hash_keys = vec!["texture", "position", "scale", "rotation", "flipped", "zValue"];
+
+        let isolated: Vec<(&&str, Option<&plist::Value>)> = hash_keys
+            .iter()
+            .map(|s| (s, hash.get(s)))
+            .collect();
+
+        let missing: Vec<&(&&str, Option<&plist::Value>)> = isolated
+            .iter()
+            .filter(|&&(_, value)| value.is_none())
+            .collect();
+
+        if !missing.is_empty() {
+            let missing_entries: Vec<&str> = missing.iter().map(|(&key, _)| key).collect();
+            panic!("missing entries: {:?}", missing_entries);
+        }
+
+        let isolated_hash: HashMap<String, plist::Value> = isolated
+            .iter()
+            .map(|&(key, value)| (key.to_string(), value.expect("value is none after checking").clone()))
+            .collect();
+
+        return AnimationSprite {
+            texture: isolated_hash.get("texture").expect("missing texture").as_string().expect("texture is not a string").to_string(),
+            position: parse_vec_f32(isolated_hash.get("position").expect("missing position").as_string().expect("position is not a string")),
+            scale: parse_vec_f32(isolated_hash.get("scale").expect("missing scale").as_string().expect("scale is not a string")),
+            rotation: isolated_hash.get("rotation").expect("missing rotation").as_string().expect("rotation is not a string").parse::<f64>().expect("couldnt parse rotation as f64"),
+            flipped: {
+                let flipped_numbers = parse_vec(isolated_hash.get("flipped").expect("missing flipped").as_string().expect("flipped is not a string"));
+                (flipped_numbers.0 > 0, flipped_numbers.1 > 0)
+            },
+            z: isolated_hash.get("zValue").expect("missing zValue").as_string().expect("zValue is not a string").parse::<i32>().expect("couldnt parse zValue as i32")
+        }
+    }
+}
+
+pub type Animations = HashMap<String, Vec<AnimationSprite>>;
+
+pub fn load_animations(path: &str) -> Animations {
+    let loaded_plist: plist::Value = plist::from_file(path).expect("could not load plist");
+    let animations = loaded_plist.as_dictionary().expect("object must be a dict").get("animationContainer").expect("key `animationContainer` doesnt exist").as_dictionary().expect("`animationContainer` must be a dict");
+    let mut parsed_animations: Animations = HashMap::new();
+    for (k, v) in animations.iter() {
+        parsed_animations.insert(k.clone(), vec![] as Vec<AnimationSprite>);
+        parsed_animations.get_mut(k.as_str()).expect("this should exist..")
+            .extend(v.as_dictionary().expect("animation must be a dict")
+            .iter().map(|(_, v)| AnimationSprite::initialize(v.clone())));
+    }
+    return parsed_animations;
+}
+
 // Trims out a sprite from an image according to a .plist spritesheet.
 pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> Option<(DynamicImage, Sprite)> {
     let sprite = spritesheet.sprites.get(&key);
@@ -155,7 +221,7 @@ pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> O
         return Some((canvas, sprite.clone()));
     }
 
-    panic!("The sprite should have been found in the spritesheet or not found at all")
+    unreachable!("The sprite should have been found in the spritesheet or not found at all")
 }
 
 pub fn get_sprite_from_loaded(spritesheet: LoadedSpritesheet, key: String) -> Option<(DynamicImage, Sprite)> {
