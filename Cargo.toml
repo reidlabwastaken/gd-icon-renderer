@@ -3,7 +3,6 @@ name = "gd-icon-renderer"
 description = "A tool to render Geometry Dash icons."
 version = "1.0.0"
 edition = "2021"
-license = "MIT"
 license-file = "LICENSE"
 repository = "https://git.reidlab.online/reidlab/gd-icon-renderer"
 
