@@ -7,7 +7,7 @@ use std::cmp;
 use crate::assets;
 use crate::assets::{LoadedSpritesheet, Animations, Sprite};
 
-// Internal function to easily transform an image
+/// Internal function to easily transform an image
 fn transform(image: &DynamicImage, color: Option<[f32; 3]>, scale: Option<(f32, f32)>, rotation: Option<f32>) -> DynamicImage {
     let mut transformed_image = image.clone();
 
@@ -74,7 +74,7 @@ fn transform(image: &DynamicImage, color: Option<[f32; 3]>, scale: Option<(f32, 
     return transformed_image;
 }
 
-// Mainly for internal use; given an array of images, their sizes and colors, tints and composits them into a single image
+/// Mainly for internal use; given an array of images, their sizes and colors, tints and composits them into a single image
 pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32)>>, colors: Vec<Option<[f32; 3]>>, scales: Vec<Option<(f32, f32)>>, rotations: Vec<Option<f32>>) -> DynamicImage {
     let transformed: Vec<DynamicImage> = images.iter().enumerate().map(|(i, img)| {
         transform(img, colors[i], scales[i], rotations[i])
@@ -123,7 +123,7 @@ fn is_black(c: [f32; 3]) -> bool {
     c == [0.0, 0.0, 0.0]
 }
 
-// Renders out a non-robot/spider icon. You may be looking for `render_icon`.
+/// Renders out a non-robot/spider icon. You may be looking for `render_icon`.
 pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, game_sheet_glow: LoadedSpritesheet) -> DynamicImage {
     let glow_col = if is_black(col2) { if is_black(col1) { [1.0, 1.0, 1.0] } else { col1 } } else { col2 };
 
@@ -167,7 +167,7 @@ fn flip(scale: (f32, f32), flipped: (bool, bool)) -> (f32, f32) {
     (scale.0 * (if flipped.0 { -1 } else { 1 }) as f32, scale.1 * (if flipped.1 { -1 } else { 1 }) as f32)
 }
 
-// Renders out a robot/spider icon. You may be looking for `render_icon`.
+/// Renders out a robot/spider icon. You may be looking for `render_icon`.
 pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, _game_sheet_glow: LoadedSpritesheet, animations: Animations) -> DynamicImage {
     let glow_col = if is_black(col2) { if is_black(col1) { [1.0, 1.0, 1.0] } else { col1 } } else { col2 };
     let glow = glow || (is_black(col1) && is_black(col2));
@@ -228,8 +228,9 @@ pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool,
     )
 }
 
-// The main entrypoint for icon rendering; this should be all you need to render out an icon.
-// `gamemode` must be one of `cube`, `ship`, `ball`, `ufo`, `wave`, `robot`, or `spider`
+/// The main entrypoint for icon rendering; this should be all you need to render out an icon.
+///
+/// `gamemode` must be one of `cube`, `ship`, `ball`, `ufo`, `wave`, `robot`, or `spider`
 pub fn render_icon(gamemode_str: &str, icon: i32, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, game_sheet_glow: LoadedSpritesheet, robot_animations: Animations, spider_animations: Animations) -> DynamicImage {
     let gamemode = crate::constants::GAMEMODES.get(gamemode_str).expect("invalid gamemode");
 

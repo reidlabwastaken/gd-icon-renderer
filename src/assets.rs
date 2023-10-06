@@ -2,10 +2,9 @@ use plist;
 
 use std::collections::HashMap;
 
-use image::*;
-use image::{DynamicImage, ImageBuffer, imageops};
+use image::DynamicImage;
 
-// "{1,2}" -> `(1, 2)`
+/// "{1,2}" -> `(1, 2)`
 fn parse_vec(str: &str) -> (i32, i32) {
     let parts: Vec<&str> = str[1..str.len()-1].split(",").collect();
     let a: Vec<i32> = parts
@@ -15,7 +14,7 @@ fn parse_vec(str: &str) -> (i32, i32) {
 
     return (a[0], a[1])
 }
-// parse_vec, but for float64
+/// parse_vec, but for float64
 fn parse_vec_f32(str: &str) -> (f32, f32) {
     let parts: Vec<&str> = str[1..str.len()-1].split(",").collect();
     let a: Vec<f32> = parts
@@ -25,7 +24,7 @@ fn parse_vec_f32(str: &str) -> (f32, f32) {
 
     return (a[0], a[1])
 }
-// `"{{1,2},{3,4}}"` -> `{{1, 2}, {3, 4}}`
+/// `"{{1,2},{3,4}}"` -> `{{1, 2}, {3, 4}}`
 fn parse_rect_vecs(str: &str) -> ((i32, i32), (i32, i32)) {
     let cleaned_str = str.replace("{", "").replace("}", "");
     let parts: Vec<&str> = cleaned_str.split(",").collect();
@@ -37,22 +36,23 @@ fn parse_rect_vecs(str: &str) -> ((i32, i32), (i32, i32)) {
     return ((a[0], a[1]), (a[2], a[3]))
 }
 
-// Represents a sprite along with its texture data in a spritesheet.
+/// Represents a sprite along with its texture data in a spritesheet.
 #[derive(Clone, Copy, Debug)]
 pub struct Sprite {
-    // Whenever rendering the sprite, offset it by this much
+    /// Whenever rendering the sprite, offset it by this much.
     pub offset: (f32, f32),
-    // {left, top}, {width, height}. Controls the cropping
-    rect: ((i32, i32), (i32, i32)),
-    // Whether the texture needs to be counter-rotated 90 degrees counter-clockwise
-    rotated: bool,
-    size: (i32, i32),
-    // Difference between this and `size` is unknown to me
-    source_size: (i32, i32)
+    /// {left, top}, {width, height}. Controls the cropping.
+    pub rect: ((i32, i32), (i32, i32)),
+    /// Whether the texture needs to be counter-rotated 90 degrees counter-clockwise.
+    pub rotated: bool,
+    /// Size of the sprite.
+    pub size: (i32, i32),
+    /// Difference between this and `size` is unknown to me.
+    pub source_size: (i32, i32)
 }
 
 impl Sprite {
-    // Shorthand for initializing a sprite with its .plist representation.
+    /// Shorthand for initializing a sprite with its .plist representation.
     fn initialize(obj: plist::Value) -> Sprite {
         let hash = obj.as_dictionary().expect("object must be a dict");
 
@@ -88,17 +88,17 @@ impl Sprite {
     }
 }
 
-// Represents a spritesheet along with its sprites.
+/// Represents a spritesheet along with its sprites.
 #[derive(Clone)]
 pub struct Spritesheet {
-    sprites: HashMap<String, Sprite>,
+    pub sprites: HashMap<String, Sprite>,
 
-    texture_file_name: String,
-    size: (i32, i32)
+    pub texture_file_name: String,
+    pub size: (i32, i32)
 }
 
 impl Spritesheet {
-    // Shorthand for initializing a spritesheet with its .plist representation.
+    /// Shorthand for initializing a spritesheet with its .plist representation.
     fn initialize(obj: plist::Value) -> Spritesheet {
         let hash = obj.as_dictionary().expect("object must be a dict");
 
@@ -113,14 +113,14 @@ impl Spritesheet {
     }
 }
 
-// Stores both a spritesheet and its associated `DynamicImage` for easy access.
+/// Stores both a spritesheet and its associated `DynamicImage` for easy access.
 #[derive(Clone)]
 pub struct LoadedSpritesheet {
-    spritesheet: Spritesheet,
-    texture: DynamicImage
+    pub spritesheet: Spritesheet,
+    pub texture: DynamicImage
 }
 
-// Loads the spritesheet and readies the associated image.
+/// Loads the spritesheet and readies the associated image.
 pub fn load_spritesheet(path: &str) -> LoadedSpritesheet {
     return LoadedSpritesheet {
         spritesheet: Spritesheet::initialize(plist::from_file(path).expect("could not load plist")),
@@ -128,7 +128,7 @@ pub fn load_spritesheet(path: &str) -> LoadedSpritesheet {
     }
 }
 
-// Represents the metadata of an animation frame's sprite
+/// Represents the metadata of an animation frame's sprite
 #[derive(Clone, Debug)]
 pub struct AnimationSprite {
     pub texture: String,
@@ -194,7 +194,7 @@ pub fn load_animations(path: &str) -> Animations {
     return parsed_animations;
 }
 
-// Trims out a sprite from an image according to a .plist spritesheet.
+/// Trims out a sprite from an image according to a .plist spritesheet.
 pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> Option<(DynamicImage, Sprite)> {
     let sprite = spritesheet.sprites.get(&key);
 
@@ -224,6 +224,7 @@ pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> O
     unreachable!("The sprite should have been found in the spritesheet or not found at all")
 }
 
+/// Trims out a sprite from an image according to a LoadedSpritesheet object.
 pub fn get_sprite_from_loaded(spritesheet: LoadedSpritesheet, key: String) -> Option<(DynamicImage, Sprite)> {
     let texture = spritesheet.texture.clone();
     let sprite = get_sprite(spritesheet.spritesheet.clone(), texture, key);

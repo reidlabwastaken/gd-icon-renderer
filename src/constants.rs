@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::LazyLock};
 
 use maplit::hashmap;
 
+/// Colors used in the game stored as floats from 0 to 1.
 pub const COLORS: &'static [[f32; 3]] = &[
     [125.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0],
     [0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0],
@@ -47,12 +48,13 @@ pub const COLORS: &'static [[f32; 3]] = &[
     [125.0 / 255.0, 125.0 / 255.0, 255.0 / 255.0]
 ];
 
-// `zany` = uses 2.0 gamemode render system w/ multiple moving parts
+/// `zany` = uses 2.0 gamemode render system w/ multiple moving parts
 pub struct Gamemode {
     pub prefix: String,
     pub zany: bool
 }
 
+/// Gamemodes used in the game. `zany` = uses 2.0 gamemode render system w/ multiple moving parts
 pub static GAMEMODES: LazyLock<HashMap<&str, Gamemode>> = LazyLock::new(|| { hashmap! {
     "cube" => Gamemode { prefix: "player_".to_string(), zany: false },
     "ship" => Gamemode { prefix: "ship_".to_string(), zany: false },

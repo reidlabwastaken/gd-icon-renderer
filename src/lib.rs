@@ -1,3 +1,11 @@
+//! # gd-icon-renderer
+//! 
+//! gd-icon-renderer is a library for rendering Geometry Dash icons.
+//! 
+//! It uses the [image](https://crates.io/crates/image) crate and [imageproc](https://crates.io/crates/imageproc) crate for image manipulation and [plist](https://crates.io/crates/plist) for parsing plist files.
+//!
+//! The main entrypoint is found in the [`renderer`](renderer/index.html) module.
+
 #![feature(lazy_cell)]
 
 pub mod assets;
