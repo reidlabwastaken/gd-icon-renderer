@@ -67,7 +67,7 @@ fn transform(image: &DynamicImage, color: Option<[f32; 3]>, scale: Option<(f32, 
         let mut canvas = ImageBuffer::new(cmp::max(trig_width, width), cmp::max(trig_height, height));
         canvas.copy_from(&transformed_image, transform_x, transform_y).expect("couldnt copy from img");
         canvas = rotate_about_center(&canvas, radians, Interpolation::Bilinear, Rgba([0, 0, 0, 0]));
-        
+    
         transformed_image = DynamicImage::ImageRgba8(canvas);
     }
 
@@ -90,14 +90,13 @@ pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32
     let bounding_box = sizes
         .iter()
         .enumerate()
-        .fold((0, 0), |acc, (i, &size)| {
+        .map(|(i, &size)| {
             let (width, height) = size;
             let (x, y) = positions.get(i).cloned().unwrap_or((0.0, 0.0));
-
-            (
-                cmp::max(acc.0, (width as f32 + x.abs() * 2.0) as i32),
-                cmp::max(acc.1, (height as f32 + y.abs() * 2.0) as i32)
-            )
+            ((width as f32 + x.abs() * 2.0) as i32, (height as f32 + y.abs() * 2.0) as i32)
+        })
+        .fold((0, 0), |acc, size| {
+            (cmp::max(acc.0, size.0), cmp::max(acc.1, size.1))
         });
 
     let mut canvas = ImageBuffer::new(bounding_box.0 as u32, bounding_box.1 as u32);

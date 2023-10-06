@@ -1,6 +1,6 @@
 # gd-icon-renderer
 
-rust geometryd ash icon redner!! shout out to [gd-icon-renderer](https://github.com/oatmealine/gd-icon-renderer) oat
+A rust Geometry Dash icon renderer. Shhout out to [gd-icon-renderer](https://github.com/oatmealine/gd-icon-renderer), this project is just a rewrite but not in libvips and crystal
 
 ## usage
 
@@ -8,7 +8,7 @@ Provide your `GJ_GameSheet02-uhd`, `GJ_GameSheetGlow-uhd`, `Robot_AnimDesc2`, an
 
 ## todo
 
-- use custom plist parser. current one takes like 5 seconds to parse an animation file
+- swap to a custom plist parser
 - change zany anim to argument
-- trim empty alpha space (robtop didnt make the bounds correctly :sob:)
-- i think theres some slight shifting in the transform to do with rotation. investigate plz. really big on spider 16 for some reason????
+- trim empty alpha space
+- i think theres some weird shifting and offsets going on. investigate plz. really big on spider 16 for some reason???? related issue here: [issue #2, oatmealine/gd-icon-renderer](https://github.com/oatmealine/gd-icon-renderer/issues/2)

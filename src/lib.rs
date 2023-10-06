@@ -14,14 +14,14 @@ mod tests {
     use std::time::Instant;
         
     #[test]
-    fn it_works() {
+    fn render_test() {
         let game_sheet_02 = load_spritesheet("assets/GJ_GameSheet02-uhd.plist");
         let game_sheet_glow = load_spritesheet("assets/GJ_GameSheetGlow-uhd.plist");
         let robot_sheet = load_animations("assets/Robot_AnimDesc2.plist");
         let spider_sheet = load_animations("assets/Spider_AnimDesc2.plist");
 
         let start = Instant::now();
-        let rendered_icon = render_icon("ship", 44, [0.0, 0.0, 0.0], [255.0/255.0, 125.0/255.0, 125.0/255.0], true, game_sheet_02, game_sheet_glow, robot_sheet, spider_sheet);
+        let rendered_icon = render_icon("spider", 16, [0.0, 0.0, 0.0], [255.0/255.0, 125.0/255.0, 125.0/255.0], true, game_sheet_02, game_sheet_glow, robot_sheet, spider_sheet);
         let end = start.elapsed();
 
         println!("time taken to render: {:?}", end);
