@@ -198,7 +198,7 @@ pub fn load_animations(path: &str) -> Animations {
 pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> Option<(DynamicImage, Sprite)> {
     let sprite = spritesheet.sprites.get(&key);
 
-    let mut canvas = img.clone();
+    let mut canvas = img;
 
     if sprite.is_none() {
         return None;
@@ -226,7 +226,7 @@ pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> O
 
 /// Trims out a sprite from an image according to a LoadedSpritesheet object.
 pub fn get_sprite_from_loaded(spritesheet: LoadedSpritesheet, key: String) -> Option<(DynamicImage, Sprite)> {
-    let texture = spritesheet.texture.clone();
-    let sprite = get_sprite(spritesheet.spritesheet.clone(), texture, key);
+    let texture = spritesheet.texture;
+    let sprite = get_sprite(spritesheet.spritesheet, texture, key);
     return sprite;
 }

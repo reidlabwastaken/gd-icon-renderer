@@ -107,7 +107,7 @@ pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32
         (bounding_box.0 as f32 / 2.0 + positions[0].0 as f32 - sizes[0].0 as f32 / 2.0) as u32,
         (bounding_box.1 as f32 / 2.0 + positions[0].1 as f32 - sizes[0].1 as f32 / 2.0) as u32
     ).expect("couldnt copy from img");
-
+    
     // stacking
     for (i, image) in transformed.iter().enumerate().skip(1) {
         let x = (bounding_box.0 as f32 / 2.0 + positions[i].0 as f32 - image.width() as f32 / 2.0) as i64;
@@ -175,41 +175,43 @@ pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool,
     let mut anim = animations.get("Robot_idle_001.png").unwrap_or_else(|| animations.get("Spider_idle_001.png").expect("no animations found")).clone();
     anim.sort_by_key(|spr| spr.z);
 
-    let mut layers = anim
-        .iter()
-        .map(|a| {
-            let texture_name = a.texture.clone().replace("spider_01", &basename).replace("robot_01", &basename);
-            let mut names = vec![
-                texture_name.replace("_001.png", "_2_001.png"),
-                texture_name.replace("_001.png", "_3_001.png"),
-                texture_name.clone(),
-                texture_name.replace("_001.png", "_extra_001.png")
-            ];
-            let mut colors = vec![
-                Some(col2),
-                None,
-                Some(col1),
-                None
-            ];
+    // TODO: this is a bit of a mess
+    // TODO: this is also very slow, but i dont think it can be helped
+    // TODO: im not good at memory management so srry
 
-            if glow {
-                names.push(texture_name.replace("_001.png", "_glow_001.png"));
-                colors.push(Some(glow_col));
-            }
+    let mut layers: Vec<(Option<(DynamicImage, Sprite)>, (f32, f32), (f32, f32), f64, bool, Option<[f32; 3]>)> = Vec::new();
 
-            names.iter().enumerate().map(|(i, v)| 
-                (
-                    assets::get_sprite_from_loaded(game_sheet_02.to_owned().clone(), v.clone()),
-                    a.position,
-                    flip(a.scale, a.flipped),
-                    a.rotation,
-                    glow && i == names.len() - 1,
-                    colors[i]
-                )
-            ).collect::<Vec<(Option<(DynamicImage, Sprite)>, (f32, f32), (f32, f32), f64, bool, Option<[f32; 3]>)>>()
-        })
-        .flatten()
-        .collect::<Vec<(Option<(DynamicImage, Sprite)>, (f32, f32), (f32, f32), f64, bool, Option<[f32; 3]>)>>();
+    for a in anim {
+        let texture_name = a.texture.replace("spider_01", &basename).replace("robot_01", &basename);
+        let mut names = vec![
+            texture_name.replace("_001.png", "_2_001.png"),
+            texture_name.replace("_001.png", "_3_001.png"),
+            texture_name.clone(),
+            texture_name.replace("_001.png", "_extra_001.png")
+        ];
+        let mut colors = vec![
+            Some(col2),
+            None,
+            Some(col1),
+            None
+        ];
+
+        if glow {
+            names.push(texture_name.replace("_001.png", "_glow_001.png"));
+            colors.push(Some(glow_col));
+        }
+
+        layers.extend(names.iter().enumerate().map(|(i, v)| {
+            (
+                assets::get_sprite_from_loaded(game_sheet_02.clone(), v.clone()),
+                a.position,
+                flip(a.scale, a.flipped),
+                a.rotation,
+                glow && i == names.len() - 1,
+                colors[i]
+            )
+        }))
+    }
 
     // put glow b4 everything else
     layers.sort_by_key(|t| if t.4 { 0 } else { 1 });
