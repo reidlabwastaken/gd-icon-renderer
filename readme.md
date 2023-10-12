@@ -42,7 +42,5 @@ Provide your `GJ_GameSheet02-uhd`, `GJ_GameSheetGlow-uhd`, `Robot_AnimDesc2`, an
 ## Todo
 
 - Add examples to the repo.
-- Swap to a custom `plist` parser. Current one is kinda slow.
-- Stop the fucking cloning. Majority of speed lost from cloning is @ [`./src/renderer.rs:178`](./src/renderer.rs) 
 - Trim extra alpha space on the final result.
 - I think theres some weird shifting and offsets going on, please investigate 🥺. Really big on `spider_16` for some reason?? Related issue on the inspired project [here](https://github.com/oatmealine/gd-icon-renderer/issues/2).

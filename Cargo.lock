@@ -192,7 +192,7 @@ dependencies = [
 
 [[package]]
 name = "gd-icon-renderer"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "image",
  "imageproc",
