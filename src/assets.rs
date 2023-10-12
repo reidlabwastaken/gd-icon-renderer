@@ -2,6 +2,7 @@ use plist;
 
 use std::collections::HashMap;
 
+use image::GenericImageView;
 use image::DynamicImage;
 
 /// "{1,2}" -> `(1, 2)`
@@ -195,10 +196,8 @@ pub fn load_animations(path: &str) -> Animations {
 }
 
 /// Trims out a sprite from an image according to a .plist spritesheet.
-pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> Option<(DynamicImage, Sprite)> {
+pub fn get_sprite(spritesheet: Spritesheet, img: &DynamicImage, key: String) -> Option<(DynamicImage, Sprite)> {
     let sprite = spritesheet.sprites.get(&key);
-
-    let mut canvas = img;
 
     if sprite.is_none() {
         return None;
@@ -212,7 +211,7 @@ pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> O
             (left, top, width, height) = (left, top, height, width);
         }
         
-        canvas = canvas.crop(left as u32, top as u32, width as u32, height as u32);
+        let mut canvas: DynamicImage = image::DynamicImage::ImageRgba8(img.view(left as u32, top as u32, width as u32, height as u32).to_image());
 
         if sprite.rotated {
             canvas = canvas.rotate270();
@@ -225,8 +224,7 @@ pub fn get_sprite(spritesheet: Spritesheet, img: DynamicImage, key: String) -> O
 }
 
 /// Trims out a sprite from an image according to a LoadedSpritesheet object.
-pub fn get_sprite_from_loaded(spritesheet: LoadedSpritesheet, key: String) -> Option<(DynamicImage, Sprite)> {
-    let texture = spritesheet.texture;
-    let sprite = get_sprite(spritesheet.spritesheet, texture, key);
+pub fn get_sprite_from_loaded(spritesheet: &LoadedSpritesheet, key: String) -> Option<(DynamicImage, Sprite)> {
+    let sprite = get_sprite(spritesheet.spritesheet.clone(), &spritesheet.texture, key);
     return sprite;
 }

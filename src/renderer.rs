@@ -129,14 +129,14 @@ pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: boo
 
     let layers = vec![
         (if glow || (is_black(col1) && is_black(col2)) {
-            assets::get_sprite_from_loaded(game_sheet_glow, format!("{}_glow_001.png", basename))
+            assets::get_sprite_from_loaded(&game_sheet_glow, format!("{}_glow_001.png", basename))
         } else {
             None
         }),
-        assets::get_sprite_from_loaded(game_sheet_02.clone(), format!("{}_2_001.png", basename)),
-        assets::get_sprite_from_loaded(game_sheet_02.clone(), format!("{}_3_001.png", basename)),
-        assets::get_sprite_from_loaded(game_sheet_02.clone(), format!("{}_001.png", basename)),
-        assets::get_sprite_from_loaded(game_sheet_02, format!("{}_extra_001.png", basename))
+        assets::get_sprite_from_loaded(&game_sheet_02, format!("{}_2_001.png", basename)),
+        assets::get_sprite_from_loaded(&game_sheet_02, format!("{}_3_001.png", basename)),
+        assets::get_sprite_from_loaded(&game_sheet_02, format!("{}_001.png", basename)),
+        assets::get_sprite_from_loaded(&game_sheet_02, format!("{}_extra_001.png", basename))
     ];
 
     let colors: Vec<Option<[f32; 3]>> = vec![
@@ -203,7 +203,7 @@ pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool,
 
         layers.extend(names.iter().enumerate().map(|(i, v)| {
             (
-                assets::get_sprite_from_loaded(game_sheet_02.clone(), v.clone()),
+                assets::get_sprite_from_loaded(&game_sheet_02, v.clone()),
                 a.position,
                 flip(a.scale, a.flipped),
                 a.rotation,
