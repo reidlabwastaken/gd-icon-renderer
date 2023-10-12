@@ -42,5 +42,4 @@ Provide your `GJ_GameSheet02-uhd`, `GJ_GameSheetGlow-uhd`, `Robot_AnimDesc2`, an
 ## Todo
 
 - Add examples to the repo.
-- Trim extra alpha space on the final result.
 - I think theres some weird shifting and offsets going on, please investigate 🥺. Really big on `spider_16` for some reason?? Related issue on the inspired project [here](https://github.com/oatmealine/gd-icon-renderer/issues/2).

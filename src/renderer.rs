@@ -123,6 +123,31 @@ fn is_black(c: [f32; 3]) -> bool {
     c == [0.0, 0.0, 0.0]
 }
 
+fn crop_whitespace(img: DynamicImage) -> DynamicImage {
+    let (width, height) = img.dimensions();
+
+    let mut left = width;
+    let mut right = 0;
+    let mut top = height;
+    let mut bottom = 0;
+    
+    for x in 0..width {
+        for y in 0..height {
+            let pixel = img.get_pixel(x, y);
+            if pixel[3] != 0 {
+                left = left.min(x);
+                right = right.max(x);
+                top = top.min(y);
+                bottom = bottom.max(y);
+            }
+        }
+    }
+
+    let cropped_image = img.clone().crop(left, top, right - left, bottom - top);
+
+    return cropped_image
+}
+
 /// Renders out a non-robot/spider icon. You may be looking for `render_icon`.
 pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, game_sheet_glow: LoadedSpritesheet) -> DynamicImage {
     let glow_col = if is_black(col2) { if is_black(col1) { [1.0, 1.0, 1.0] } else { col1 } } else { col2 };
@@ -147,7 +172,7 @@ pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: boo
         None
     ];
 
-    return render_layered(
+    let layered_images = render_layered(
         layers.iter()
             .filter_map(|s| s.as_ref().map(|(img, _spr)| img.to_owned()))
             .collect(),
@@ -161,6 +186,8 @@ pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: boo
         vec![None, None, None, None, None],
         vec![None, None, None, None, None]
     );
+
+    return crop_whitespace(layered_images);
 }
 
 fn flip(scale: (f32, f32), flipped: (bool, bool)) -> (f32, f32) {
@@ -221,13 +248,15 @@ pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool,
         .filter_map(|(opt_sprite, pos, scale, rot, glow, color)| opt_sprite.clone().map(|sprite| ((sprite.0, sprite.1), *pos, *scale, *rot, *glow, *color)))
         .collect::<Vec<((DynamicImage, Sprite), (f32, f32), (f32, f32), f64, bool, Option<[f32; 3]>)>>();
 
-    return render_layered(
+    let layered_images = render_layered(
         layers_r.iter().map(|t| t.0.0.clone()).collect(),
         layers_r.iter().map(|t| Some((t.0.1.offset.0 + t.1.0 * 4.0, t.0.1.offset.1 * -1.0  + t.1.1 * -4.0))).collect(),
         layers_r.iter().map(|t| t.5).collect(),
         layers_r.iter().map(|t| Some(t.2)).collect(),
         layers_r.iter().map(|t| Some(t.3 as f32)).collect()
-    )
+    );
+
+    return crop_whitespace(layered_images);
 }
 
 /// The main entrypoint for icon rendering; this should be all you need to render out an icon.
