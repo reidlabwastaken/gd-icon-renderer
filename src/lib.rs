@@ -29,7 +29,7 @@ mod tests {
         let spider_sheet = load_animations("assets/Spider_AnimDesc2.plist");
 
         let start = Instant::now();
-        let rendered_icon = render_icon("spider", 16, [0.0, 0.0, 0.0], [255.0/255.0, 125.0/255.0, 125.0/255.0], true, game_sheet_02, game_sheet_glow, robot_sheet, spider_sheet);
+        let rendered_icon = render_icon("ship", 44, [0.0, 0.0, 0.0], [255.0/255.0, 125.0/255.0, 125.0/255.0], true, game_sheet_02, game_sheet_glow, robot_sheet, spider_sheet).expect("failed to render image");
         let end = start.elapsed();
 
         println!("time taken to render: {:?}", end);

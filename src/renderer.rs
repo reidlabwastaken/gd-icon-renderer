@@ -75,7 +75,7 @@ fn transform(image: &DynamicImage, color: Option<[f32; 3]>, scale: Option<(f32, 
 }
 
 /// Mainly for internal use; given an array of images, their sizes and colors, tints and composits them into a single image
-pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32)>>, colors: Vec<Option<[f32; 3]>>, scales: Vec<Option<(f32, f32)>>, rotations: Vec<Option<f32>>) -> DynamicImage {
+pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32)>>, colors: Vec<Option<[f32; 3]>>, scales: Vec<Option<(f32, f32)>>, rotations: Vec<Option<f32>>) -> Result<DynamicImage, &'static str> {
     let transformed: Vec<DynamicImage> = images.iter().enumerate().map(|(i, img)| {
         transform(img, colors[i], scales[i], rotations[i])
     }).collect();
@@ -103,7 +103,7 @@ pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32
 
     // base
     canvas.copy_from(
-        transformed.get(0).expect("no images provided"),
+        transformed.get(0).ok_or("Could not get image of inputted icon ID")?,
         (bounding_box.0 as f32 / 2.0 + positions[0].0 as f32 - sizes[0].0 as f32 / 2.0) as u32,
         (bounding_box.1 as f32 / 2.0 + positions[0].1 as f32 - sizes[0].1 as f32 / 2.0) as u32
     ).expect("couldnt copy from img");
@@ -116,7 +116,7 @@ pub fn render_layered(images: Vec<DynamicImage>, positions: Vec<Option<(f32, f32
         imageops::overlay(&mut canvas, image, x, y)
     }
 
-    return DynamicImage::ImageRgba8(canvas);
+    return Ok(DynamicImage::ImageRgba8(canvas));
 }
 
 fn is_black(c: [f32; 3]) -> bool {
@@ -149,7 +149,7 @@ fn crop_whitespace(img: DynamicImage) -> DynamicImage {
 }
 
 /// Renders out a non-robot/spider icon. You may be looking for `render_icon`.
-pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, game_sheet_glow: LoadedSpritesheet) -> DynamicImage {
+pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, game_sheet_glow: LoadedSpritesheet) -> Result<DynamicImage, &'static str> {
     let glow_col = if is_black(col2) { if is_black(col1) { [1.0, 1.0, 1.0] } else { col1 } } else { col2 };
 
     let layers = vec![
@@ -185,9 +185,9 @@ pub fn render_normal(basename: String, col1: [f32; 3], col2: [f32; 3], glow: boo
             .collect(),
         vec![None, None, None, None, None],
         vec![None, None, None, None, None]
-    );
+    )?;
 
-    return crop_whitespace(layered_images);
+    return Ok(crop_whitespace(layered_images));
 }
 
 fn flip(scale: (f32, f32), flipped: (bool, bool)) -> (f32, f32) {
@@ -195,16 +195,12 @@ fn flip(scale: (f32, f32), flipped: (bool, bool)) -> (f32, f32) {
 }
 
 /// Renders out a robot/spider icon. You may be looking for `render_icon`.
-pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, _game_sheet_glow: LoadedSpritesheet, animations: Animations) -> DynamicImage {
+pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, _game_sheet_glow: LoadedSpritesheet, animations: Animations) -> Result<DynamicImage, &'static str> {
     let glow_col = if is_black(col2) { if is_black(col1) { [1.0, 1.0, 1.0] } else { col1 } } else { col2 };
     let glow = glow || (is_black(col1) && is_black(col2));
 
     let mut anim = animations.get("Robot_idle_001.png").unwrap_or_else(|| animations.get("Spider_idle_001.png").expect("no animations found")).clone();
     anim.sort_by_key(|spr| spr.z);
-
-    // TODO: this is a bit of a mess
-    // TODO: this is also very slow, but i dont think it can be helped
-    // TODO: im not good at memory management so srry
 
     let mut layers: Vec<(Option<(DynamicImage, Sprite)>, (f32, f32), (f32, f32), f64, bool, Option<[f32; 3]>)> = Vec::new();
 
@@ -254,20 +250,20 @@ pub fn render_zany(basename: String, col1: [f32; 3], col2: [f32; 3], glow: bool,
         layers_r.iter().map(|t| t.5).collect(),
         layers_r.iter().map(|t| Some(t.2)).collect(),
         layers_r.iter().map(|t| Some(t.3 as f32)).collect()
-    );
+    )?;
 
-    return crop_whitespace(layered_images);
+    return Ok(crop_whitespace(layered_images));
 }
 
 /// The main entrypoint for icon rendering; this should be all you need to render out an icon.
 ///
 /// `gamemode` must be one of `cube`, `ship`, `ball`, `ufo`, `wave`, `robot`, or `spider`
-pub fn render_icon(gamemode_str: &str, icon: i32, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, game_sheet_glow: LoadedSpritesheet, robot_animations: Animations, spider_animations: Animations) -> DynamicImage {
-    let gamemode = crate::constants::GAMEMODES.get(gamemode_str).expect("invalid gamemode");
+pub fn render_icon(gamemode_str: &str, icon: i32, col1: [f32; 3], col2: [f32; 3], glow: bool, game_sheet_02: LoadedSpritesheet, game_sheet_glow: LoadedSpritesheet, robot_animations: Animations, spider_animations: Animations) -> Result<DynamicImage, &'static str> {
+    let gamemode = crate::constants::GAMEMODES.get(gamemode_str).ok_or("Invalid gamemode")?;
 
     if gamemode.zany {
-        return render_zany(format!("{}{:02}", gamemode.prefix, icon), col1, col2, glow, game_sheet_02, game_sheet_glow, if gamemode_str == "robot" { robot_animations } else { spider_animations })
+        return Ok(render_zany(format!("{}{:02}", gamemode.prefix, icon), col1, col2, glow, game_sheet_02, game_sheet_glow, if gamemode_str == "robot" { robot_animations } else { spider_animations }))?
     } else {
-        return render_normal(format!("{}{:02}", gamemode.prefix, icon), col1, col2, glow, game_sheet_02, game_sheet_glow)
+        return Ok(render_normal(format!("{}{:02}", gamemode.prefix, icon), col1, col2, glow, game_sheet_02, game_sheet_glow))?
     }
 }

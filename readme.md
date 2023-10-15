@@ -28,7 +28,7 @@ Provide your `GJ_GameSheet02-uhd`, `GJ_GameSheetGlow-uhd`, `Robot_AnimDesc2`, an
 3. Render the icon out:
 
     ```rs
-    let icon_img = gd_icon_renderer::renderer::render_icon("ship", 44, [0.0, 0.0, 0.0], [255.0/255.0, 125.0/255.0, 125.0/255.0], true, game_sheet_02, game_sheet_glow, robot_sheet, spider_sheet);
+    let icon_img = gd_icon_renderer::renderer::render_icon("ship", 44, [0.0, 0.0, 0.0], [255.0/255.0, 125.0/255.0, 125.0/255.0], true, game_sheet_02, game_sheet_glow, robot_sheet, spider_sheet).expect("failed to render image");
     ```
 
     You'll now be given a [`DynamicImage`](https://docs.rs/image/latest/image/enum.DynamicImage.html)
@@ -41,6 +41,6 @@ Provide your `GJ_GameSheet02-uhd`, `GJ_GameSheetGlow-uhd`, `Robot_AnimDesc2`, an
 
 ## Todo
 
-- Maybe make render_icon a `Result`
+- Improve gamemode selection
 - Add examples to the repo.
 - I think theres some weird shifting and offsets going on, please investigate 🥺. Really big on `spider_16` for some reason?? Related issue on the inspired project [here](https://github.com/oatmealine/gd-icon-renderer/issues/2).
